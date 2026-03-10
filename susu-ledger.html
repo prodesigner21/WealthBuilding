@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Group Susu Ledger</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0f;font-family:Georgia,serif;color:#e8dcc8;min-height:100vh}
+button{cursor:pointer;font-family:Georgia,serif}
+input{font-family:Georgia,serif}
+::-webkit-scrollbar{height:6px;width:6px;background:#0d0d1a}
+::-webkit-scrollbar-thumb{background:#2a2a3e;border-radius:3px}
+
+/* Layout */
+.header{background:linear-gradient(135deg,#1a1a2e,#0f0f1a);border-bottom:1px solid #2a2a3e;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:100}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#c9a84c,#e8c97e);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.app-title{font-size:19px;font-weight:700;color:#e8c97e;letter-spacing:1px}
+.app-sub{font-size:10px;color:#6a6a8a;letter-spacing:2px;margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.save-badge{font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:20px;transition:all 0.3s;min-width:90px;text-align:center}
+.save-ok{background:#0a2010;color:#4ade80;border:1px solid #166534}
+.save-ing{background:#1a1500;color:#e8c97e;border:1px solid #3a2f00}
+.save-err{background:#2d0404;color:#f87171;border:1px solid #7f1d1d}
+.save-hidden{opacity:0}
+
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));background:#1a1a2e;border-bottom:1px solid #2a2a3e}
+.stat{padding:14px 18px;background:#0d0d1a;border-right:1px solid #1a1a2e}
+.stat-label{font-size:9px;color:#4a4a6a;letter-spacing:2px;margin-bottom:4px;text-transform:uppercase}
+.stat-value{font-size:21px;font-weight:700;font-family:monospace}
+
+/* Tabs */
+.tabs{padding:0 24px;background:#0d0d1a;border-bottom:1px solid #1a1a2e;display:flex}
+.tab{padding:11px 18px;background:none;border:none;border-bottom:2px solid transparent;color:#4a4a6a;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.tab.active{border-bottom-color:#e8c97e;color:#e8c97e}
+
+/* Main */
+.main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.controls{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.amount-box{display:flex;align-items:center;gap:8px;background:#1a1a2e;padding:7px 13px;border-radius:8px;border:1px solid #2a2a3e}
+.amount-label{font-size:10px;color:#6a6a8a;letter-spacing:1px;white-space:nowrap}
+.amount-input{background:none;border:none;color:#e8c97e;font-size:14px;font-weight:700;width:100px;outline:none;font-family:monospace}
+.btn{border:none;border-radius:8px;font-weight:700;font-size:11px;letter-spacing:1px;padding:8px 16px;transition:opacity 0.15s}
+.btn:hover{opacity:0.85}
+.btn-gold{background:#e8c97e;color:#0a0a0f}
+.btn-green{background:#4ade80;color:#0a0a0f;font-size:14px;padding:8px 14px}
+.btn-ghost{background:#1a1a2e;color:#6a6a8a;border:1px solid #2a2a3e;padding:8px 14px}
+.btn-blue{background:#1a1a3e;color:#60a5fa;border:1px solid #2a2a5e;font-size:10px}
+.btn-teal{background:#0a2020;color:#4ade80;border:1px solid #0a4040;font-size:10px}
+.add-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.text-input{padding:8px 13px;background:#1a1a2e;border:1px solid #2a2a3e;color:#e8dcc8;border-radius:8px;outline:none;font-size:13px;font-family:Georgia,serif}
+.text-input:focus{border-color:#e8c97e}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #1a1a2e}
+table{width:100%;border-collapse:collapse;min-width:860px}
+th{padding:9px 4px;font-size:9px;letter-spacing:2px;color:#4a4a6a;background:#0d0d1a;border-bottom:1px solid #1a1a2e;font-weight:600;text-transform:uppercase;text-align:center;white-space:nowrap}
+th.th-left{text-align:left;padding-left:14px;min-width:155px}
+td{border-bottom:1px solid #111120}
+tr:last-child td{border-bottom:none}
+.row-even td{background:#0d0d1a}
+.row-odd td{background:#0a0a0f}
+.row-total td{background:#131325}
+
+.member-td{padding:10px 14px}
+.member-inner{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.member-name{font-weight:600;font-size:13px}
+.member-tag{font-size:9px;color:#f87171;letter-spacing:1px;margin-top:1px}
+.remove-btn{margin-left:auto;background:none;border:none;color:#252535;font-size:16px;padding:2px 6px;border-radius:4px;transition:color 0.15s;flex-shrink:0}
+.remove-btn:hover{color:#f87171}
+
+.cell-td{padding:5px 2px;text-align:center}
+.cell{width:48px;height:40px;margin:0 auto;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.12s;user-select:none}
+.cell:hover{filter:brightness(1.2)}
+.cell-paid{border:1px solid #166534;background:linear-gradient(135deg,#052e16,#14532d)}
+.cell-unpaid{border:1px solid #7f1d1d;background:linear-gradient(135deg,#2d0404,#450a0a)}
+.cell-icon{font-size:12px;line-height:1}
+.cell-amt{font-size:8px;color:#4ade80;line-height:1;margin-top:2px}
+.edit-input{width:42px;font-size:8px;text-align:center;background:#0a2010;border:1px solid #4ade80;color:#4ade80;border-radius:3px;outline:none;padding:1px 2px}
+
+.total-td{padding:10px 12px;text-align:right;white-space:nowrap}
+.total-main{font-family:monospace;font-weight:700;color:#4ade80;font-size:13px}
+.total-sub{font-size:9px;color:#4a4a6a;margin-top:1px}
+.month-total{font-family:monospace;font-size:10px;font-weight:700}
+.grand-total{font-family:monospace;font-weight:700;color:#e8c97e;font-size:15px}
+
+.legend{display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a2e;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:10px;color:#4a4a6a}
+.swatch{width:20px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px}
+
+/* Summary */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.card-bar{position:absolute;top:0;left:0;right:0;height:3px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.card-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.card-name{font-weight:700;font-size:14px}
+.card-status{font-size:10px;letter-spacing:1px;margin-top:2px}
+.card-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.cs-label{font-size:8px;color:#4a4a6a;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase}
+.cs-val{font-size:15px;font-weight:700;font-family:monospace}
+.prog-track{height:5px;background:#1a1a2e;border-radius:3px;overflow:hidden;margin-top:12px}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+.prog-label{text-align:right;font-size:9px;color:#4a4a6a;margin-top:3px}
+
+.group-card{background:linear-gradient(135deg,#1a1500,#2a2000);border:1px solid #3a2f00;border-radius:12px;padding:18px;display:flex;flex-direction:column;justify-content:center}
+.gc-label{font-size:10px;color:#6a5a00;letter-spacing:2px;margin-bottom:6px;text-transform:uppercase}
+.gc-total{font-size:30px;font-weight:700;color:#e8c97e;font-family:monospace}
+.gc-sub{font-size:11px;color:#6a5a00;margin-top:3px}
+.gc-defaults{margin-top:10px;font-size:12px;color:#f87171}
+
+/* Year nav */
+.year-nav{display:flex;gap:8px;align-items:center}
+.btn-nav{padding:5px 12px;background:#1a1a2e;border:1px solid #2a2a3e;color:#6a6a8a;border-radius:6px;font-size:11px;font-family:Georgia,serif}
+.btn-nav:hover{color:#e8c97e;border-color:#3a3a5e}
+.year-display{color:#e8c97e;font-weight:700;font-size:15px;min-width:36px;text-align:center}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;border:1px solid #2a2a3e;color:#e8c97e;padding:10px 20px;border-radius:10px;font-size:12px;z-index:999;transition:transform 0.3s ease;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">₦</div>
+    <div>
+      <div class="app-title">GROUP SUSU LEDGER</div>
+      <div class="app-sub" id="year-sub">CONTRIBUTION TRACKER · 2026</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="save-badge save-hidden" id="save-badge">✓ SAVED</div>
+    <div class="year-nav">
+      <button class="btn-nav" id="btn-prev">← <span id="prev-yr"></span></button>
+      <span class="year-display" id="yr-display"></span>
+      <button class="btn-nav" id="btn-next"><span id="next-yr"></span> →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-label">Total Collected</div><div class="stat-value" id="s-collected" style="color:#4ade80">₦0</div></div>
+  <div class="stat"><div class="stat-label">Expected (Annual)</div><div class="stat-value" id="s-expected" style="color:#e8c97e">₦0</div></div>
+  <div class="stat"><div class="stat-label">Collection Rate</div><div class="stat-value" id="s-rate" style="color:#60a5fa">0%</div></div>
+  <div class="stat"><div class="stat-label">Defaults</div><div class="stat-value" id="s-defaults" style="color:#f87171">0</div></div>
+  <div class="stat"><div class="stat-label">Members</div><div class="stat-value" id="s-members" style="color:#a78bfa">0</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" id="t-tracker" onclick="switchTab('tracker')">📋 Monthly Tracker</button>
+  <button class="tab" id="t-summary" onclick="switchTab('summary')">📊 Member Summary</button>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="controls">
+    <div class="amount-box">
+      <span class="amount-label">DEFAULT ₦</span>
+      <input type="number" class="amount-input" id="default-amount" value="5000" oninput="onAmountInput()"/>
+    </div>
+    <button class="btn btn-gold" onclick="toggleAddRow()">+ ADD MEMBER</button>
+    <div class="add-row hidden" id="add-row">
+      <input type="text" class="text-input" id="new-name" placeholder="Full name…" onkeydown="if(event.key==='Enter')doAddMember()"/>
+      <button class="btn btn-green" onclick="doAddMember()">✓</button>
+      <button class="btn btn-ghost" onclick="toggleAddRow()">✕</button>
+    </div>
+    <button class="btn btn-blue" onclick="exportJSON()">⬇ EXPORT</button>
+    <button class="btn btn-teal" onclick="document.getElementById('imp').click()">⬆ IMPORT</button>
+    <input type="file" id="imp" accept=".json" class="hidden" onchange="importJSON(event)"/>
+  </div>
+
+  <!-- Tracker -->
+  <div id="view-tracker">
+    <div class="table-wrap">
+      <table>
+        <thead><tr id="t-head"></tr></thead>
+        <tbody id="t-body"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="swatch" style="background:#14532d;border:1px solid #166834">✓</div>Paid — click ₦ to edit amount</div>
+      <div class="legend-item"><div class="swatch" style="background:#450a0a;border:1px solid #7f1d1d">✗</div>Not paid / Default</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div id="view-summary" class="hidden">
+    <div class="summary-grid" id="sum-grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'susu-ledger';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let activeTab  = 'tracker';
+let editingKey = null;
+let saveTimer  = null;
+
+let S = {
+  members: [
+    {id:1, name:'Alice Mensah'},
+    {id:2, name:'Bernard Osei'},
+    {id:3, name:'Clara Asante'},
+  ],
+  contributions: {},
+  defaultAmount: 5000,
+  activeYear: new Date().getFullYear(),
+};
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      S = {
+        members:       parsed.members       ?? S.members,
+        contributions: parsed.contributions ?? {},
+        defaultAmount: parsed.defaultAmount ?? 5000,
+        activeYear:    parsed.activeYear    ?? new Date().getFullYear(),
+      };
+    }
+  } catch(e) { console.warn('Load error', e); }
+}
+
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+      showBadge('ok');
+    } catch(e) {
+      console.error('Save error', e);
+      showBadge('err');
+    }
+  }, 300);
+}
+
+function showBadge(type) {
+  const b = document.getElementById('save-badge');
+  b.className = 'save-badge';
+  if (type === 'ok')  { b.textContent = '✓ SAVED';       b.classList.add('save-ok');  }
+  if (type === 'ing') { b.textContent = '⟳ SAVING…';    b.classList.add('save-ing'); }
+  if (type === 'err') { b.textContent = '⚠ SAVE FAILED'; b.classList.add('save-err'); }
+  clearTimeout(b._t);
+  if (type === 'ok') b._t = setTimeout(() => b.classList.add('save-hidden'), 2500);
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `susu-backup-${S.activeYear}-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Backup exported!');
+}
+
+function importJSON(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      S = { members: d.members??[], contributions: d.contributions??{}, defaultAmount: d.defaultAmount??5000, activeYear: d.activeYear??new Date().getFullYear() };
+      save(); render(); toast('Data imported!');
+    } catch { toast('Import failed — invalid file'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function gk(id, mo) { return `${id}-${mo}-${S.activeYear}`; }
+function hue(id) { return id * 67 % 360; }
+function initials(n) { return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function fmt(n) { return '₦' + Number(n).toLocaleString(); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+function toggleCell(id, mo) {
+  const k = gk(id, mo);
+  const c = S.contributions[k];
+  if (!c)       S.contributions[k] = {paid:true,  amount:S.defaultAmount};
+  else if(c.paid) S.contributions[k] = {...c, paid:false};
+  else          delete S.contributions[k];
+  save(); render();
+}
+
+function startEdit(id, mo, e) {
+  e.stopPropagation();
+  const k = gk(id, mo);
+  if (!S.contributions[k]?.paid) return;
+  editingKey = k;
+  render();
+  setTimeout(() => {
+    const inp = document.getElementById('ei-' + k);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 10);
+}
+
+function commitEdit(k) {
+  const inp = document.getElementById('ei-' + k);
+  if (inp) {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v >= 0 && S.contributions[k]) {
+      S.contributions[k].amount = v;
+      save();
+    }
+  }
+  editingKey = null;
+  render();
+}
+
+function toggleAddRow() {
+  const row = document.getElementById('add-row');
+  row.classList.toggle('hidden');
+  if (!row.classList.contains('hidden')) document.getElementById('new-name').focus();
+}
+
+function doAddMember() {
+  const inp = document.getElementById('new-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  S.members.push({id: Date.now(), name});
+  inp.value = '';
+  document.getElementById('add-row').classList.add('hidden');
+  save(); render(); toast(name + ' added!');
+}
+
+function removeMember(id) {
+  S.members = S.members.filter(m => m.id !== id);
+  save(); render();
+}
+
+function onAmountInput() {
+  const v = parseFloat(document.getElementById('default-amount').value);
+  if (!isNaN(v) && v >= 0) { S.defaultAmount = v; save(); }
+}
+
+function switchTab(t) {
+  activeTab = t;
+  document.getElementById('view-tracker').classList.toggle('hidden', t !== 'tracker');
+  document.getElementById('view-summary').classList.toggle('hidden', t !== 'summary');
+  document.getElementById('t-tracker').classList.toggle('active', t === 'tracker');
+  document.getElementById('t-summary').classList.toggle('active', t === 'summary');
+  if (t === 'summary') renderSummary();
+}
+
+// ─── Compute stats ────────────────────────────────────────────────────────────
+function computeStats() {
+  let totalPaid = 0, totalExpected = 0, totalDefaults = 0;
+  const memberStats = S.members.map(m => {
+    let paid=0, amount=0, defaults=0;
+    for (let mo=0; mo<12; mo++) {
+      const c = S.contributions[gk(m.id, mo)];
+      totalExpected += S.defaultAmount;
+      if (c?.paid) { paid++; amount += c.amount; totalPaid += c.amount; }
+      else { defaults++; totalDefaults++; }
+    }
+    return {...m, paidMonths:paid, totalAmount:amount, defaults};
+  });
+  return {memberStats, totalPaid, totalExpected, totalDefaults};
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderHeader() {
+  document.getElementById('yr-display').textContent = S.activeYear;
+  document.getElementById('year-sub').textContent   = `CONTRIBUTION TRACKER · ${S.activeYear}`;
+  document.getElementById('prev-yr').textContent    = S.activeYear - 1;
+  document.getElementById('next-yr').textContent    = S.activeYear + 1;
+  document.getElementById('default-amount').value   = S.defaultAmount;
+}
+
+function renderStats(st) {
+  const rate = st.totalExpected > 0 ? Math.round((st.totalPaid / st.totalExpected) * 100) : 0;
+  document.getElementById('s-collected').textContent = fmt(st.totalPaid);
+  document.getElementById('s-expected').textContent  = fmt(st.totalExpected);
+  document.getElementById('s-rate').textContent      = rate + '%';
+  document.getElementById('s-defaults').textContent  = st.totalDefaults;
+  document.getElementById('s-members').textContent   = S.members.length;
+}
+
+function renderTracker(st) {
+  // Header
+  document.getElementById('t-head').innerHTML =
+    `<th class="th-left">Member</th>` +
+    MONTHS.map(m => `<th>${m}</th>`).join('') +
+    `<th style="color:#60a5fa;padding-right:12px">Total</th>`;
+
+  // Rows
+  let html = '';
+  S.members.forEach((m, i) => {
+    const ms = st.memberStats.find(s => s.id === m.id) || {};
+    const h  = hue(m.id);
+    html += `<tr class="row-${i%2===0?'even':'odd'}">
+      <td class="member-td">
+        <div class="member-inner">
+          <div class="avatar" style="background:hsl(${h},40%,28%);color:hsl(${h},70%,68%)">${initials(m.name)}</div>
+          <div>
+            <div class="member-name">${m.name}</div>
+            ${ms.defaults>0?`<div class="member-tag">${ms.defaults} DEFAULT${ms.defaults>1?'S':''}</div>`:''}
+          </div>
+          <button class="remove-btn" onclick="removeMember(${m.id})" title="Remove">×</button>
+        </div>
+      </td>`;
+
+    MONTHS.forEach((_,mo) => {
+      const k    = gk(m.id, mo);
+      const c    = S.contributions[k];
+      const paid = c?.paid;
+      const isE  = editingKey === k;
+      html += `<td class="cell-td">
+        <div class="cell ${paid?'cell-paid':'cell-unpaid'}" onclick="toggleCell(${m.id},${mo})" title="${paid?'Mark unpaid':'Mark paid'}">
+          <div class="cell-icon">${paid?'✓':'✗'}</div>
+          ${paid && c ? (isE
+            ? `<input id="ei-${k}" class="edit-input" value="${c.amount}" onblur="commitEdit('${k}')" onkeydown="if(event.key==='Enter')commitEdit('${k}')" onclick="event.stopPropagation()"/>`
+            : `<div class="cell-amt" onclick="event.stopPropagation();startEdit(${m.id},${mo},event)" title="Edit amount">${fmt(c.amount)}</div>`
+          ) : ''}
+        </div>
+      </td>`;
+    });
+
+    html += `<td class="total-td">
+        <div class="total-main">${fmt(ms.totalAmount||0)}</div>
+        <div class="total-sub">${ms.paidMonths||0}/12 months</div>
+      </td></tr>`;
+  });
+
+  // Totals row
+  html += `<tr class="row-total"><td style="padding:10px 14px;font-weight:700;color:#e8c97e;font-size:11px;letter-spacing:1px;white-space:nowrap">MONTHLY TOTALS</td>`;
+  MONTHS.forEach((_,mo) => {
+    const t = S.members.reduce((s,m) => { const c=S.contributions[gk(m.id,mo)]; return s+(c?.paid?c.amount:0); }, 0);
+    html += `<td style="padding:10px 2px;text-align:center"><span class="month-total" style="color:${t>0?'#60a5fa':'#252535'}">${t>0?fmt(t):'—'}</span></td>`;
+  });
+  html += `<td class="total-td"><div class="grand-total">${fmt(st.totalPaid)}</div></td></tr>`;
+
+  document.getElementById('t-body').innerHTML = html;
+}
+
+function renderSummary() {
+  const st = computeStats();
+  let html = '';
+  st.memberStats.forEach(ms => {
+    const rate   = Math.round((ms.paidMonths/12)*100);
+    const sc     = rate>=80?'#4ade80':rate>=50?'#e8c97e':'#f87171';
+    const status = rate>=80?'✓ GOOD STANDING':rate>=50?'⚠ PARTIAL':'✗ DEFAULTING';
+    const h      = hue(ms.id);
+    html += `<div class="card">
+      <div class="card-bar" style="background:${sc}"></div>
+      <div class="card-head">
+        <div class="card-avatar" style="background:hsl(${h},40%,22%);color:hsl(${h},70%,68%)">${initials(ms.name)}</div>
+        <div>
+          <div class="card-name">${ms.name}</div>
+          <div class="card-status" style="color:${sc}">${status}</div>
+        </div>
+      </div>
+      <div class="card-stats">
+        <div><div class="cs-label">Contributed</div><div class="cs-val" style="color:#4ade80">${fmt(ms.totalAmount)}</div></div>
+        <div><div class="cs-label">Paid</div><div class="cs-val" style="color:#60a5fa">${ms.paidMonths}/12</div></div>
+        <div><div class="cs-label">Defaults</div><div class="cs-val" style="color:${ms.defaults>0?'#f87171':'#4a4a6a'}">${ms.defaults}</div></div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${rate}%;background:${sc}"></div></div>
+      <div class="prog-label">${rate}% compliance</div>
+    </div>`;
+  });
+
+  const gtRate = st.totalExpected>0?(st.totalPaid/st.totalExpected)*100:0;
+  html += `<div class="group-card">
+    <div class="gc-label">Group Total · ${S.activeYear}</div>
+    <div class="gc-total">${fmt(st.totalPaid)}</div>
+    <div class="gc-sub">of ${fmt(st.totalExpected)} expected</div>
+    <div class="prog-track" style="background:#2a2000;margin-top:12px"><div class="prog-fill" style="width:${gtRate}%;background:linear-gradient(90deg,#c9a84c,#e8c97e)"></div></div>
+    <div class="gc-defaults">${st.totalDefaults} defaults across group</div>
+  </div>`;
+
+  document.getElementById('sum-grid').innerHTML = html;
+}
+
+function render() {
+  const st = computeStats();
+  renderHeader();
+  renderStats(st);
+  renderTracker(st);
+  if (activeTab === 'summary') renderSummary();
+}
+
+// ─── Year nav ─────────────────────────────────────────────────────────────────
+document.getElementById('btn-prev').onclick = () => { S.activeYear--; save(); render(); };
+document.getElementById('btn-next').onclick = () => { S.activeYear++; save(); render(); };
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
